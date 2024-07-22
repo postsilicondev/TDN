@@ -18,7 +18,7 @@ decentralized = []
 serde = { version = "1.0", default-features = false }
 tokio = { version = "1", features = ["fs"] }
 sled = { version = "0.34", optional = true }
-rusqlite = {version = "0.31", optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
+rusqlite = {version = "0.32", optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
 
 tdn_types = { version = "0.10", path = "../types", default-features = false }
 
