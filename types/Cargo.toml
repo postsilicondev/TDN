@@ -20,7 +20,7 @@ full = []     # full     : multiple groups , multiple layers.
 anyhow = "1.0"
 bincode = "1.3"
 blake3 = "1.3"
-chamomile_types = "0.10"
+chamomile_types = "0.11"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
 tokio = { version = "1", default-features = false, features = ["sync"] }
