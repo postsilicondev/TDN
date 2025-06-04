@@ -7,7 +7,7 @@ use std::sync::Arc;
 pub use serde_json::json;
 pub type RpcParam = Value;
 
-use crate::primitives::{HandleResult, Result};
+use crate::primitives::{HandleResult, Result, PeerId};
 
 #[derive(Debug, Clone)]
 pub enum RpcError {
@@ -97,7 +97,7 @@ impl RpcError {
     }
 }
 
-pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcError, u64)> {
+pub fn parse_jsonrpc(json_string: String) -> std::result::Result<(PeerId, RpcParam), (RpcError, u64)> {
     match serde_json::from_str::<RpcParam>(&json_string) {
         Ok(mut value) => {
             let id_res = value
@@ -127,6 +127,10 @@ pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcE
                 value["params"] = RpcParam::Array(vec![]);
             }
 
+            let peer = value.get("peer")
+                .and_then(|s| s.as_str())
+                .and_then(|s| PeerId::from_hex(s).ok()).unwrap_or(PeerId::default());
+
             let jsonrpc = value
                 .get("jsonrpc")
                 .map(|v| {
@@ -140,7 +144,7 @@ pub fn parse_jsonrpc(json_string: String) -> std::result::Result<RpcParam, (RpcE
                 return Err((RpcError::InvalidVersion, id));
             }
 
-            Ok(value)
+            Ok((peer, value))
         }
         Err(_e) => Err((RpcError::ParseError, 0)),
     }

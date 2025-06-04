@@ -1,44 +1,34 @@
 [package]
 name = "tdn_did"
-version = "0.10.0"
-authors = ["Dev <dev@cympletech.com>"]
-edition = "2021"
-readme = "README.md"
 description = "Distributed identity and wallet multiple accounts."
-repository = "https://github.com/cympletech/tdn"
-keywords = ["did", "tdn", "wallet"]
-license = "MIT/Apache-2.0"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+categories.workspace = true
+license.workspace = true
 
 [features]
 default = ["rand_chacha"]
 ed25519 = ["ed25519-dalek", "curve25519-dalek"]
 
 [dependencies]
-tdn_types = { version = "0.10", path = "../types", default-features = false }
-
-anyhow = "1.0"
-zeroize = "1.5"
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
+tdn_types.workspace = true
+anyhow.workspace = true
+zeroize.workspace = true
+serde.workspace = true
 
 # mnemonic (BIP-39)
-hmac = { version = "0.12", default-features = false }
-pbkdf2 = { version = "0.12", default-features = false }
-sha2 = { version = "0.10", default-features = false }
-unicode-normalization = { version = "0.1", default-features = false }
+hmac.workspace = true
+pbkdf2.workspace = true
+sha2.workspace = true
+unicode-normalization.workspace = true
 
-rand_chacha = { version = "0.3", optional = true }
-
-[dependencies.ed25519-dalek]
-git = "https://github.com/cympletech/ed25519-dalek"
-default-features = false
-optional = true
-
-[dependencies.curve25519-dalek]
-git = "https://github.com/cympletech/curve25519-dalek"
-default-features = false
-optional = true
+rand_chacha = { workspace = true, optional = true }
+ed25519-dalek = { workspace = true, optional = true }
+curve25519-dalek = { workspace = true, optional = true }
 
 [dev-dependencies]
-bs58 = "0.5"
-hex = "0.4"
-ethsign = "0.9"
+bs58.workspace = true
+hex.workspace = true
+ethsign.workspace = true

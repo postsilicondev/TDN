@@ -17,8 +17,8 @@ use tokio::{
 };
 
 use tdn_types::{
-    message::{ReceiveMessage, RpcSendMessage},
-    primitives::{new_io_error, Result},
+    message::{ReceiveMessage, RpcRecvType, RpcSendType},
+    primitives::{new_io_error, PeerId, Result},
     rpc::RpcParam,
 };
 
@@ -33,9 +33,10 @@ pub struct RpcConfig {
 
 #[derive(Debug)]
 pub enum RpcMessage {
-    Open(u64, Sender<RpcMessage>),
+    /// uid, peer, data, sender
+    Open(u64, PeerId, String, Sender<RpcMessage>),
     Close(u64),
-    Request(u64, RpcParam, Option<oneshot::Sender<RpcMessage>>),
+    Request(u64, PeerId, RpcParam, Option<oneshot::Sender<RpcMessage>>),
     Response(RpcParam),
 }
 
@@ -43,7 +44,7 @@ fn rpc_channel() -> (Sender<RpcMessage>, Receiver<RpcMessage>) {
     mpsc::channel(128)
 }
 
-fn rpc_send_channel() -> (Sender<RpcSendMessage>, Receiver<RpcSendMessage>) {
+fn rpc_send_channel() -> (Sender<RpcSendType>, Receiver<RpcSendType>) {
     mpsc::channel(128)
 }
 
@@ -73,7 +74,13 @@ impl ChannelRpcSender {
     }
 
     pub async fn send_timeout(&self, msg: RpcParam, timeout_millis: u64) {
-        let _ = self.0.send_timeout(ChannelMessage::Async(msg), Duration::from_millis(timeout_millis)).await;
+        let _ = self
+            .0
+            .send_timeout(
+                ChannelMessage::Async(msg),
+                Duration::from_millis(timeout_millis),
+            )
+            .await;
     }
 
     pub async fn sync_send(&self, msg: RpcParam, timeout_millis: u64) -> Result<RpcParam> {
@@ -95,7 +102,7 @@ impl ChannelRpcSender {
 pub(crate) async fn start(
     config: RpcConfig,
     send: Sender<ReceiveMessage>,
-) -> Result<Sender<RpcSendMessage>> {
+) -> Result<Sender<RpcSendType>> {
     let (out_send, out_recv) = rpc_send_channel();
 
     let (self_send, self_recv) = rpc_channel();
@@ -107,13 +114,13 @@ pub(crate) async fn start(
 }
 
 enum FutureResult {
-    Out(RpcSendMessage),
+    Out(RpcSendType),
     Stream(RpcMessage),
 }
 
 async fn listen(
     send: Sender<ReceiveMessage>,
-    mut out_recv: Receiver<RpcSendMessage>,
+    mut out_recv: Receiver<RpcSendType>,
     mut self_recv: Receiver<RpcMessage>,
 ) -> Result<()> {
     tokio::spawn(async move {
@@ -122,49 +129,58 @@ async fn listen(
 
         loop {
             let res = select! {
-                v = async { out_recv.recv().await.map(|msg| FutureResult::Out(msg)) } => v,
-                v = async { self_recv.recv().await.map(|msg| FutureResult::Stream(msg)) } => v
+                v = async { out_recv.recv().await.map(FutureResult::Out) } => v,
+                v = async { self_recv.recv().await.map(FutureResult::Stream) } => v
             };
 
             match res {
                 Some(FutureResult::Out(msg)) => {
-                    let RpcSendMessage(id, params, is_ws) = msg;
-                    if is_ws {
-                        if id == 0 {
-                            // default send to all ws.
-                            for s in ws_connections.values() {
-                                let _ = s.send(RpcMessage::Response(params.clone())).await;
-                            }
-                        } else {
-                            if let Some(s) = ws_connections.get(&id) {
-                                let _ = s.send(RpcMessage::Response(params)).await;
+                    match msg {
+                        RpcSendType::Connect(_url, _pid, _sig, _data) => {
+                            // TODO start a new websocket
+                        }
+                        RpcSendType::Leave(id) => {
+                            // Close a websocket
+                            if let Some(s) = ws_connections.remove(&id) {
+                                let _ = s.send(RpcMessage::Close(id)).await;
                             }
                         }
-                    } else {
-                        let s = sync_connections.remove(&id);
-                        if s.is_some() {
-                            let _ = s.unwrap().send(RpcMessage::Response(params));
+                        RpcSendType::Event(id, params) => {
+                            if let Some(s) = ws_connections.get(&id) {
+                                let _ = s.send(RpcMessage::Response(params)).await;
+                            } else {
+                                let s = sync_connections.remove(&id);
+                                if s.is_some() {
+                                    let _ = s.unwrap().send(RpcMessage::Response(params));
+                                }
+                            }
                         }
                     }
                 }
                 Some(FutureResult::Stream(msg)) => {
                     match msg {
-                        RpcMessage::Request(id, params, sender) => {
+                        RpcMessage::Request(id, peer, params, sender) => {
                             let is_ws = sender.is_none();
                             if !is_ws {
                                 sync_connections.insert(id, sender.unwrap());
                             }
-                            send.send(ReceiveMessage::Rpc(id, params, is_ws))
+                            send.send(ReceiveMessage::Rpc(RpcRecvType::Event(id, peer, params)))
                                 .await
                                 .expect("Rpc to Outside channel closed");
                         }
-                        RpcMessage::Open(id, sender) => {
+                        RpcMessage::Open(id, peer, data, sender) => {
                             ws_connections.insert(id, sender);
+                            send.send(ReceiveMessage::Rpc(RpcRecvType::Connect(id, peer, data)))
+                                .await
+                                .expect("Rpc to Outside channel closed");
                         }
                         RpcMessage::Close(id) => {
                             // clear this id
                             ws_connections.remove(&id);
                             sync_connections.remove(&id);
+                            send.send(ReceiveMessage::Rpc(RpcRecvType::Leave(id)))
+                                .await
+                                .expect("Rpc to Outside channel closed");
                         }
                         _ => {} // others not handle
                     }

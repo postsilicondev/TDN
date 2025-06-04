@@ -68,7 +68,7 @@ pub mod prelude {
         ReceiveMessage as ChamomileReceiveMessage, SendMessage as ChamomileSendMessage,
     };
     use std::{path::PathBuf, sync::Arc};
-    use tdn_types::message::RpcSendMessage;
+    use tdn_types::message::RpcSendType;
     use tokio::{
         sync::mpsc::{self, Receiver, Sender},
         sync::RwLock,
@@ -148,7 +148,7 @@ pub mod prelude {
     pub async fn start_rpc(
         config: RpcConfig,
         out_send: Sender<ReceiveMessage>,
-    ) -> Result<Sender<RpcSendMessage>> {
+    ) -> Result<Sender<RpcSendType>> {
         rpc_start(config, out_send).await
     }
 
@@ -158,7 +158,7 @@ pub mod prelude {
         p2p_config: P2pConfig,
         out_send: Sender<ReceiveMessage>,
         mut self_recv: Receiver<SendMessage>,
-        rpc_send: Option<Sender<RpcSendMessage>>,
+        rpc_send: Option<Sender<RpcSendType>>,
         key: Option<PeerKey>,
     ) -> Result<PeerId> {
         // start chamomile network & inner rpc.
@@ -379,7 +379,7 @@ pub mod prelude {
                         out_send
                             .send(ReceiveMessage::NetworkLost)
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e));
+                            .expect("Outside channel missing");
                     }
                     ChamomileReceiveMessage::OwnConnect(peer) => {
                         let assist_id = peer.assist;
@@ -388,7 +388,7 @@ pub mod prelude {
                         out_send
                             .send(ReceiveMessage::Own(RecvType::Connect(new_peer, vec![])))
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e));
+                            .expect("Outside channel missing");
                     }
                     ChamomileReceiveMessage::OwnLeave(peer) => {
                         let assist_id = peer.assist;
@@ -397,13 +397,13 @@ pub mod prelude {
                         out_send
                             .send(ReceiveMessage::Own(RecvType::Leave(new_peer)))
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e));
+                            .expect("Outside channel missing");
                     }
                     ChamomileReceiveMessage::OwnEvent(aid, data) => {
                         out_send
                             .send(ReceiveMessage::Own(RecvType::Event(aid, data)))
                             .await
-                            .map_err(|e| error!("Outside channel: {:?}", e));
+                            .expect("Outside channel missing");
                     }
                 }
             }
@@ -466,10 +466,10 @@ pub mod prelude {
                             .map_err(|e| error!("Chamomile channel: {:?}", e))
                             .expect("Chamomile channel closed");
                     }
-                    SendMessage::Rpc(uid, param, is_ws) => {
+                    SendMessage::Rpc(msg) => {
                         if let Some(ref rpc_send) = rpc_send {
                             rpc_send
-                                .send(RpcSendMessage(uid, param, is_ws))
+                                .send(msg)
                                 .await
                                 .map_err(|e| error!("Rpc channel: {:?}", e))
                                 .expect("Rpc channel closed");

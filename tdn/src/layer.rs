@@ -60,7 +60,7 @@ pub(crate) async fn layer_handle_connect(
     let gmsg = RecvType::Connect(peer, data);
     let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));
@@ -79,7 +79,7 @@ pub(crate) async fn layer_handle_result_connect(
     let gmsg = RecvType::ResultConnect(peer, data);
     let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));
@@ -99,7 +99,7 @@ pub(crate) async fn layer_handle_result(
     let gmsg = RecvType::Result(peer, is_ok, data);
     let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));
@@ -116,7 +116,7 @@ pub(crate) async fn layer_handle_leave(
     let gmsg = RecvType::Leave(peer.into());
     let msg = ReceiveMessage::Layer(fgid, fgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));
@@ -135,7 +135,7 @@ pub(crate) async fn layer_handle_data(
     let gmsg = RecvType::Event(peer_id, data);
     let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));
@@ -155,7 +155,7 @@ pub(crate) async fn layer_handle_stream(
     let gmsg = RecvType::Stream(uid, stream_type, data);
     let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));
@@ -175,7 +175,7 @@ pub(crate) async fn layer_handle_delivery(
     let gmsg = RecvType::Delivery(delivery_type, tid, is_sended);
     let msg = ReceiveMessage::Layer(fgid, tgid, gmsg);
 
-    out_send
+    let _ = out_send
         .send(msg)
         .await
         .map_err(|e| error!("Outside channel: {:?}", e));

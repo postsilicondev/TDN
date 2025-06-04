@@ -1,12 +1,12 @@
 [package]
 name = "tdn_storage"
-version = "0.10.0"
-authors = ["Dev <dev@cympletech.com>"]
-edition = "2021"
-license = "MIT/Apache-2.0"
-repository = "https://github.com/cympletech/tdn"
 description = "A pluggable library for TDN, include local file, local db, distributed db, decentralized db."
-keywords = ["storage", "database", "distributed", "decentralized"]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+categories.workspace = true
+license.workspace = true
 
 [features]
 default = ["local"]
@@ -15,12 +15,8 @@ distributed = []
 decentralized = []
 
 [dependencies]
-serde = { version = "1.0", default-features = false }
-tokio = { version = "1", features = ["fs"] }
-sled = { version = "0.34", optional = true }
-rusqlite = {version = "0.31", optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
-
-tdn_types = { version = "0.10", path = "../types", default-features = false }
-
-[dev-dependencies]
-tokio = { version = "1", features = ["full"] }
+tdn_types.workspace = true
+serde.workspace = true
+tokio.workspace = true
+sled.workspace = true
+rusqlite = { workspace = true, optional = true }

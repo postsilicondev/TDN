@@ -59,6 +59,34 @@ pub enum RecvType {
     Delivery(DeliveryType, u64, bool),
 }
 
+/// rpc message receive from TDN
+#[derive(Debug)]
+pub enum RpcRecvType {
+    /// when a websocket connected, send from TDN to outside.
+    /// params: connection uid, peer and peer `connect_info`.
+    Connect(u64, PeerId, String),
+    /// when a websocket disconnect, send from TDN to outside.
+    /// params: connection uid.
+    Leave(u64),
+    /// when received a data from a connection, include http and websocket
+    /// params: connection uid, request params
+    Event(u64, PeerId, RpcParam),
+}
+
+/// rpc message receive from TDN
+#[derive(Debug)]
+pub enum RpcSendType {
+    /// when want to connect a websocke, send from TDN to outside.
+    /// params: url, peer, signature and peer `connect_info`.
+    Connect(String, PeerId, String, String),
+    /// when want to close websocket, send from TDN to outside.
+    /// params: connection uid.
+    Leave(u64),
+    /// when received a data from a connection, include http and websocket
+    /// params: connection uid, request params
+    Event(u64, RpcParam),
+}
+
 /// channel message send to chamomile network.
 #[derive(Debug)]
 pub enum NetworkType {
@@ -98,8 +126,8 @@ pub enum SendMessage {
     Group(SendType),
     /// Layer: LayerMessage.
     Layer(GroupId, SendType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcSendType
+    Rpc(RpcSendType),
     /// Network: Control the Network state.
     Network(NetworkType),
 }
@@ -114,8 +142,8 @@ pub enum ReceiveMessage {
     Group(RecvType),
     /// Layer: LayerMessage. Take care of `Leave`.
     Layer(GroupId, GroupId, RecvType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcRecvType
+    Rpc(RpcRecvType),
     /// when network lost all DHT network and direct stables. will tell outside.
     NetworkLost,
 }
@@ -128,8 +156,8 @@ pub enum SendMessage {
     Own(SendType),
     /// Group: GroupMessage.
     Group(SendType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcSendType
+    Rpc(RpcSendType),
     /// Network: Control the Network state.
     Network(NetworkType),
 }
@@ -142,8 +170,8 @@ pub enum ReceiveMessage {
     Own(RecvType),
     /// Group: GroupMessage.
     Group(RecvType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcRecvType
+    Rpc(RpcRecvType),
     /// when network lost all DHT network and direct stables. will tell outside.
     NetworkLost,
 }
@@ -156,8 +184,8 @@ pub enum SendMessage {
     Own(SendType),
     /// Group: GroupMessage.
     Group(GroupId, SendType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcSendType
+    Rpc(RpcSendType),
     /// Network: Control the Network state.
     Network(NetworkType),
 }
@@ -170,8 +198,8 @@ pub enum ReceiveMessage {
     Own(RecvType),
     /// Group: GroupMessage.
     Group(GroupId, RecvType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcRecvType
+    Rpc(RpcRecvType),
     /// when network lost all DHT network and direct stables. will tell outside.
     NetworkLost,
 }
@@ -187,8 +215,8 @@ pub enum SendMessage {
     /// Layer: LayerMessage.
     /// params: sender's id, receiver's, msg. Take care of `Leave`.
     Layer(GroupId, GroupId, SendType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcSendType
+    Rpc(RpcSendType),
     /// Network: Control the Network state.
     Network(NetworkType),
 }
@@ -204,12 +232,8 @@ pub enum ReceiveMessage {
     /// Layer: LayerMessage.
     /// params: sender's, receiver's, msg.
     Layer(GroupId, GroupId, RecvType),
-    /// RPC: connection uid, request params, is websocket.
-    Rpc(u64, RpcParam, bool),
+    /// RPC: RpcRecvType
+    Rpc(RpcRecvType),
     /// when network lost all DHT network and direct stables. will tell outside.
     NetworkLost,
 }
-
-/// packaging the rpc message. not open to ouside.
-#[derive(Debug)]
-pub struct RpcSendMessage(pub u64, pub RpcParam, pub bool);

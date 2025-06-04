@@ -1,4 +1,4 @@
-[![crate](https://img.shields.io/badge/crates.io-v0.10.6-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.10.6-blue.svg)](https://docs.rs/tdn)
+[![crate](https://img.shields.io/badge/crates.io-v0.11.0-green.svg)](https://crates.io/crates/tdn) [![doc](https://img.shields.io/badge/docs.rs-v0.11.0-blue.svg)](https://docs.rs/tdn)
 
 <h1 align="center"><img src="https://cympletech.com/logo/tdn_words.png" alt="TDN"></h1>
 
@@ -126,12 +126,6 @@ Use `feature` to control. (Tip: one group, is one chain, is one application)
 - [tdn-did](./did) decentralized identity.
 - [tdn-storage](./storage) Storage library, include Local file, Local db, Distributed db, Decentralized db.
 - [tdn-permission](https://github.com/cympletech/tdn-permission) Group permission library, include permissioned & permissionless group algorithm.
-
-## For more information, please visit:
-- Website: https://cympletech.com
-- Twitter: https://twitter.com/cympletech
-- Discord: https://discord.gg/UfFjp6Kaj4
-- E-mail: contact@cympletech.com
 
 ### Core QA
 1. **What is Layers & Groups?**

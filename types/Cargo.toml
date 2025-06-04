@@ -1,13 +1,12 @@
 [package]
 name = "tdn_types"
-version = "0.10.0"
-authors = ["Dev <dev@cympletech.com>"]
-edition = "2021"
-readme = "README.md"
-description = "Trusted Distributed Network types."
-repository = "https://github.com/cympletech/TDN"
-keywords = ["distributed", "blockchain", "web3"]
-license = "MIT/Apache-2.0"
+description = "TDN framework core types"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+categories.workspace = true
+license.workspace = true
 
 [features]
 default = ["std"]
@@ -17,10 +16,10 @@ multiple = [] # multiple : multiple groups , no layers.
 full = []     # full     : multiple groups , multiple layers.
 
 [dependencies]
-anyhow = "1.0"
-bincode = "1.3"
-blake3 = "1.3"
-chamomile_types = "0.10"
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
-serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
-tokio = { version = "1", default-features = false, features = ["sync"] }
+anyhow.workspace = true
+bincode.workspace = true
+blake3.workspace = true
+chamomile_types.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true

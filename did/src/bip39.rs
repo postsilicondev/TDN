@@ -466,7 +466,7 @@ impl Mnemonic {
         };
 
         let mut seed = [0u8; PBKDF2_BYTES];
-        pbkdf2::pbkdf2::<Hmac<Sha512>>(
+        let _ = pbkdf2::pbkdf2::<Hmac<Sha512>>(
             normalized_password.as_bytes(),
             normalized_salt.as_bytes(),
             PBKDF2_ROUNDS,

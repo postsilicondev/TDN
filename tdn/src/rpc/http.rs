@@ -13,7 +13,7 @@ use tokio::{
 };
 //use std::time::Duration;
 
-use tdn_types::rpc::parse_jsonrpc;
+use tdn_types::{primitives::PeerId, rpc::parse_jsonrpc};
 
 use super::RpcMessage;
 
@@ -43,24 +43,29 @@ pub(crate) async fn http_listen(
     Ok(())
 }
 
-enum HTTP {
-    Ok(usize),
+enum HTTP<'a> {
+    Ok(usize, httparse::Request<'a, 'a>),
     NeedMore(usize, usize),
 }
 
-fn parse_req<'a>(src: &[u8]) -> std::result::Result<HTTP, &'a str> {
-    let mut req_parsed_headers = [httparse::EMPTY_HEADER; 16];
-    let mut req = httparse::Request::new(&mut req_parsed_headers);
+fn parse_req<'a>(
+    src: &'a [u8],
+    req_parsed_headers: &'a mut [httparse::Header<'a>],
+) -> std::result::Result<HTTP<'a>, &'a str> {
+    let mut req = httparse::Request::new(req_parsed_headers);
     let status = req.parse(&src).map_err(|_| "HTTP parse error")?;
 
     let content_length_headers: Vec<httparse::Header> = req
         .headers
         .iter()
-        .filter(|header| header.name.to_ascii_lowercase() == "content-length")
+        .filter(|header| {
+            let name = header.name.to_ascii_lowercase();
+            name == "content-length"
+        })
         .cloned()
         .collect();
 
-    if content_length_headers.len() != 1 {
+    if content_length_headers.len() < 1 {
         return Err("HTTP header is invalid");
     }
 
@@ -81,7 +86,7 @@ fn parse_req<'a>(src: &[u8]) -> std::result::Result<HTTP, &'a str> {
     };
 
     if src[amt..].len() >= length {
-        return Ok(HTTP::Ok(amt));
+        return Ok(HTTP::Ok(amt, req));
     }
 
     Ok(HTTP::NeedMore(amt, length))
@@ -103,7 +108,9 @@ async fn http_connection(
     // TODO add timeout
     let mut tmp_buf = vec![0u8; 1024];
     let n = stream.read(&mut tmp_buf).await?;
-    let body = match parse_req(&tmp_buf[..n]) {
+    let mut h_peer = PeerId::default();
+    let mut req_parsed_headers = [httparse::EMPTY_HEADER; 16];
+    let body = match parse_req(&tmp_buf[..n], &mut req_parsed_headers) {
         Ok(HTTP::NeedMore(amt, len)) => {
             buf.extend(&tmp_buf[amt..n]);
             loop {
@@ -116,7 +123,21 @@ async fn http_connection(
             }
             &buf[..]
         }
-        Ok(HTTP::Ok(amt)) => &tmp_buf[amt..n],
+        Ok(HTTP::Ok(amt, req)) => {
+            for header in req.headers {
+                let name = header.name.to_ascii_uppercase();
+                if name == "X-PEER" {
+                    if let Some(p) = String::from_utf8(header.value.to_vec())
+                        .ok()
+                        .and_then(|s| PeerId::from_hex(&s).ok())
+                    {
+                        h_peer = p;
+                    }
+                }
+            }
+
+            &tmp_buf[amt..n]
+        }
         Err(e) => {
             info!("TDN: HTTP JSONRPC parse error: {}", e);
             return Ok(());
@@ -127,8 +148,13 @@ async fn http_connection(
     let res = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin:*\r\nCross-Origin-Resource-Policy:cross-origin\r\nContent-Type:application/json;charset=UTF-8\r\n\r\n";
 
     match parse_jsonrpc((*msg).to_string()) {
-        Ok(rpc_param) => {
-            send.send(RpcMessage::Request(id, rpc_param, Some(s_send)))
+        Ok((peer, rpc_param)) => {
+            let real_peer = if peer != PeerId::default() {
+                peer
+            } else {
+                h_peer
+            };
+            send.send(RpcMessage::Request(id, real_peer, rpc_param, Some(s_send)))
                 .await
                 .expect("Http to Rpc channel closed");
         }
