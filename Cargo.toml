@@ -33,7 +33,7 @@ httparse = "1.6"
 mime = "0.3"
 pbkdf2 = { version = "0.12", default-features = false }
 rand_chacha = "0.3"
-rusqlite = {version = "0.31", features = ["bundled-sqlcipher-vendored-openssl"] }
+rusqlite = {version = "0.36", features = ["bundled-sqlcipher-vendored-openssl"] }
 secp256k1 = { version = "0.28", features = ["recovery"] }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"]}
 serde_json = { version = "1.0", default-features = false, features = ["alloc"]}
